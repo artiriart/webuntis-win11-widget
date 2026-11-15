@@ -13,4 +13,4 @@ Build settings:
 - Minimum OS 10.0.22000.0, because the Widgets Board is Windows 11.
 - Unsigned MSIX. No certificate is created or committed.
 
-The workflow file is local until the GitHub App is allowed to update `.github/workflows`. After that permission is granted, the same file is the compile check: restore, core tests, Release publish, unsigned MSIX artifact.
+The workflow is saved at `ci/windows-build.yml` because the GitHub App cannot create `.github/workflows` yet. After that permission is granted, copy it to `.github/workflows/build.yml`. It restores, tests the core project, publishes Release, and uploads the unsigned MSIX.

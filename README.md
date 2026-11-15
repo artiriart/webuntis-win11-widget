@@ -12,7 +12,7 @@ What works:
 - `WebUntis.App` is a WinUI 3 window that shows the product name and a not-signed-in state.
 - The same executable registers `IWidgetProvider` when the widget host starts it with `-RegisterProcessAsComServer`.
 - The widget definition `WebUntis_Today` supports small, medium, and large. It currently sends placeholder Adaptive Card text and does not fetch a timetable.
-- The Windows build workflow is written at `.github/workflows/build.yml`. It is not on GitHub yet: the v0 GitHub App cannot create workflow files until the Workflows permission is granted.
+- The Windows build workflow is saved at `ci/windows-build.yml`. It is not active yet: the v0 GitHub App cannot create `.github/workflows` files until the Workflows permission is granted.
 
 What remains:
 
