@@ -1,4 +1,5 @@
 using WebUntis.Core;
+using Xunit;
 
 namespace WebUntis.Core.Tests;
 
