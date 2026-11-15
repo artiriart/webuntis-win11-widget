@@ -6,6 +6,7 @@ obj/
 *.pfx
 *.snk
 *.cer
+artifacts/
 AppPackages/
 BundleArtifacts/
 *.msix

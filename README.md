@@ -12,7 +12,7 @@ What works:
 - `WebUntis.App` is a WinUI 3 window that shows the product name and a not-signed-in state.
 - The same executable registers `IWidgetProvider` when the widget host starts it with `-RegisterProcessAsComServer`.
 - The widget definition `WebUntis_Today` supports small, medium, and large. It currently sends placeholder Adaptive Card text and does not fetch a timetable.
-- The Windows build workflow is saved at `ci/windows-build.yml`. It is not active yet: the v0 GitHub App cannot create `.github/workflows` files until the Workflows permission is granted.
+- `.github/workflows/build.yml` creates a development certificate, signs the MSIX, and uploads `WebUntis.msix` with the public `WebUntis.cer`. The private key is not stored.
 
 What remains:
 
@@ -20,7 +20,7 @@ What remains:
 - Week and day views.
 - Credential Locker and the shared cache.
 - Real widget content, countdown, and the open-app action.
-- A signed package. The current MSIX is unsigned.
+- Installing the signed package on a Windows 11 machine and confirming the window and widget.
 
 ## Account model
 
@@ -32,11 +32,15 @@ untis://setschool?url={host}&school={school}&user={user}&key={secret}
 
 That payload is not stored yet. Do not put one in a settings file, a log, or this repository.
 
+## Install a CI build
+
+Download the `webuntis-msix` artifact from a successful run of `.github/workflows/build.yml`. Trust `WebUntis.cer`, then install `WebUntis.msix`. The full steps are in [docs/install-windows.md](docs/install-windows.md). Developer Mode is not a substitute for trusting the certificate.
+
+The package includes the Windows App Runtime, so a separate runtime install is not required. The widget appears in the Widgets Board only after the MSIX is installed.
+
 ## Build
 
-WinUI 3 does not build on Linux. The check is `.github/workflows/build.yml` on `windows-latest`.
-
-The package is framework-dependent. Sideloading needs Windows 11, Developer Mode, and the Windows App Runtime that matches Windows App SDK 2.6. The widget appears in the Widgets Board only after the MSIX is installed, because registration is package identity.
+WinUI 3 does not build on Linux. The check is `.github/workflows/build.yml` on `windows-latest`. It generates a self-signed certificate in the runner's certificate store, signs the package, verifies the signature, and uploads the public certificate beside the MSIX. No private key, PFX, or certificate password is written to the repository or the artifact.
 
 ```text
 src/WebUntis.Core/     portable client library

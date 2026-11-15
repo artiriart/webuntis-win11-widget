@@ -11,6 +11,6 @@ Build settings:
 - .NET 10, because .NET 8 left support on 10 November 2026.
 - Windows App SDK 2.6.5.
 - Minimum OS 10.0.22000.0, because the Widgets Board is Windows 11.
-- Unsigned MSIX. No certificate is created or committed.
+- Signed development MSIX. `.github/workflows/build.yml` creates the certificate during the job. The subject is `CN=artiriart`, matching the package publisher. Only `WebUntis.cer` is exported. `*.pfx` is ignored and is not produced.
 
-The workflow is saved at `ci/windows-build.yml` because the GitHub App cannot create `.github/workflows` yet. After that permission is granted, copy it to `.github/workflows/build.yml`. It restores, tests the core project, publishes Release, and uploads the unsigned MSIX.
+Installation is documented in [install-windows.md](install-windows.md).

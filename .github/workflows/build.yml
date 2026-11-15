@@ -20,14 +20,18 @@ jobs:
       - name: Test core
         run: dotnet test tests/WebUntis.Core.Tests/WebUntis.Core.Tests.csproj -c Release --no-restore
 
-      - name: Build and package
-        run: dotnet publish src/WebUntis.App/WebUntis.App.csproj -c Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:AppxPackageSigningEnabled=false -p:GenerateAppxPackageOnBuild=true -bl:build.binlog
+      - name: Sign and package
+        shell: pwsh
+        run: ./ci/sign-dev-package.ps1
 
-      - name: Upload MSIX
+      - name: Upload signed package and public certificate
         uses: actions/upload-artifact@v4
         with:
           name: webuntis-msix
-          path: src/WebUntis.App/**/*.msix
+          path: |
+            artifacts/WebUntis.msix
+            artifacts/WebUntis.cer
+            artifacts/INSTALL.md
           if-no-files-found: error
 
       - name: Upload build log
