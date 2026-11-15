@@ -1,0 +1,32 @@
+<Window
+    x:Class="WebUntis.App.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="WebUntis">
+    <Grid Padding="32" RowSpacing="16" ColumnSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock
+            x:Name="TitleText"
+            Style="{StaticResource TitleTextBlockStyle}"
+            Text="WebUntis" />
+        <TextBlock
+            x:Name="VersionText"
+            Grid.Row="1"
+            Style="{StaticResource BodyTextBlockStyle}"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Text="Version" />
+        <InfoBar
+            Grid.Row="2"
+            IsOpen="True"
+            IsClosable="False"
+            Severity="Informational"
+            Title="Not signed in"
+            Message="The Windows package and widget host hook are in place. WebUntis login and the timetable are not connected yet." />
+    </Grid>
+</Window>

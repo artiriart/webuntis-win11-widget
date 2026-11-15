@@ -1,0 +1,28 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebUntis.Core", "src\WebUntis.Core\WebUntis.Core.csproj", "{4F2A9C10-6B3E-4D71-9A55-1C8E7B0D2F44}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebUntis.Core.Tests", "tests\WebUntis.Core.Tests\WebUntis.Core.Tests.csproj", "{8C1D5E22-7A40-4F93-B6D8-2E9A0C4B7F15}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebUntis.App", "src\WebUntis.App\WebUntis.App.csproj", "{1A6E3B90-5C28-4E17-8D44-9F0B2A6C8E31}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4F2A9C10-6B3E-4D71-9A55-1C8E7B0D2F44}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4F2A9C10-6B3E-4D71-9A55-1C8E7B0D2F44}.Debug|x64.Build.0 = Debug|Any CPU
+		{4F2A9C10-6B3E-4D71-9A55-1C8E7B0D2F44}.Release|x64.ActiveCfg = Release|Any CPU
+		{4F2A9C10-6B3E-4D71-9A55-1C8E7B0D2F44}.Release|x64.Build.0 = Release|Any CPU
+		{8C1D5E22-7A40-4F93-B6D8-2E9A0C4B7F15}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8C1D5E22-7A40-4F93-B6D8-2E9A0C4B7F15}.Debug|x64.Build.0 = Debug|Any CPU
+		{8C1D5E22-7A40-4F93-B6D8-2E9A0C4B7F15}.Release|x64.ActiveCfg = Release|Any CPU
+		{8C1D5E22-7A40-4F93-B6D8-2E9A0C4B7F15}.Release|x64.Build.0 = Release|Any CPU
+		{1A6E3B90-5C28-4E17-8D44-9F0B2A6C8E31}.Debug|x64.ActiveCfg = Debug|x64
+		{1A6E3B90-5C28-4E17-8D44-9F0B2A6C8E31}.Debug|x64.Build.0 = Debug|x64
+		{1A6E3B90-5C28-4E17-8D44-9F0B2A6C8E31}.Release|x64.ActiveCfg = Release|x64
+		{1A6E3B90-5C28-4E17-8D44-9F0B2A6C8E31}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+EndGlobal

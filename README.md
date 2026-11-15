@@ -1,19 +1,26 @@
 # WebUntis for Windows 11
 
-Windows 11 desktop app and native Widgets Board provider for WebUntis. The behavior is ported from the KDE Plasma applet in `reference/kde-widget`, not rewritten against guessed endpoints.
+Windows 11 desktop app and native Widgets Board provider for WebUntis. API behavior is taken from the KDE Plasma applet in `reference/kde-widget`. See [docs/phase-1-analysis.md](docs/phase-1-analysis.md).
 
 ## Status
 
-Phase 1 is done: the KDE client, login flow, and timetable mapping are documented in [docs/phase-1-analysis.md](docs/phase-1-analysis.md). Application code starts in phase 2.
+Phase 2 is the packaged skeleton.
 
-What works now:
+What works:
 
-- The reference client and its settings are preserved in `reference/kde-widget`.
-- Login, timetable, inbox, caching, and widget-host integration are specified from that code and from the current Windows App SDK widget provider docs.
+- `WebUntis.Core` is a portable .NET 10 library. It does not call WebUntis yet.
+- `WebUntis.App` is a WinUI 3 window that shows the product name and a not-signed-in state.
+- The same executable registers `IWidgetProvider` when the widget host starts it with `-RegisterProcessAsComServer`.
+- The widget definition `WebUntis_Today` supports small, medium, and large. It currently sends placeholder Adaptive Card text and does not fetch a timetable.
+- The Windows build workflow is written at `.github/workflows/build.yml`. It is not on GitHub yet: the v0 GitHub App cannot create workflow files until the Workflows permission is granted.
 
 What remains:
 
-- WinUI 3 app, WebUntis client, Credential Locker storage, native widget, and the GitHub Actions MSIX build.
+- QR login, timetable and inbox client.
+- Week and day views.
+- Credential Locker and the shared cache.
+- Real widget content, countdown, and the open-app action.
+- A signed package. The current MSIX is unsigned.
 
 ## Account model
 
@@ -23,17 +30,19 @@ The KDE widget signs in with a WebUntis QR payload:
 untis://setschool?url={host}&school={school}&user={user}&key={secret}
 ```
 
-The Windows app will store that payload in Windows Credential Locker. Do not put it in a settings file, a log, or this repository.
+That payload is not stored yet. Do not put one in a settings file, a log, or this repository.
 
 ## Build
 
-WinUI 3 needs a Windows runner. This repository will build on `windows-latest` once phase 2 adds the solution. An unsigned MSIX can be sideloaded on Windows 11 with Developer Mode. Widget registration is package identity, so the widget and the app ship in one MSIX.
+WinUI 3 does not build on Linux. The check is `.github/workflows/build.yml` on `windows-latest`.
 
-## Layout
+The package is framework-dependent. Sideloading needs Windows 11, Developer Mode, and the Windows App Runtime that matches Windows App SDK 2.6. The widget appears in the Widgets Board only after the MSIX is installed, because registration is package identity.
 
 ```text
-reference/kde-widget/   KDE Plasma source used as the API reference
-docs/                   Phase notes and architecture
+src/WebUntis.Core/     portable client library
+src/WebUntis.App/      WinUI 3 app and widget COM server
+tests/                 core tests
+reference/kde-widget/  API reference
 ```
 
 ## License
