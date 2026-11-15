@@ -1,0 +1,24 @@
+{
+  "KPlugin": {
+    "Authors": [
+      {
+        "Email": "hallooderich@gmail.com",
+        "Name": "artiriart"
+      }
+    ],
+    "Name": "Untis Dash",
+    "Id": "org.kde.plasma.untis",
+    "Description": "Shows most important stuff of Web Untis in a Dashboard",
+    "Category": "Utilities",
+    "Icon": "view-calendar-day",
+    "EnabledByDefault": true,
+    "License": "MIT",
+    "ServiceTypes": [
+      "Plasma/Applet"
+    ],
+    "Version": "1.0",
+    "Website": "https://v0.com/"
+  },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-MainScript": "ui/main.qml"
+}
