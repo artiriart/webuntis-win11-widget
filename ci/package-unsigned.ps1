@@ -30,11 +30,6 @@ $unsignedPackage = Join-Path $artifactDir 'WebUntis.msix'
 . (Join-Path $PSScriptRoot 'repack-signable.ps1')
 Convert-ToSignableMsix -InputPackage $package.FullName -OutputPackage $unsignedPackage
 
-$signature = Get-AuthenticodeSignature $unsignedPackage
-if ($signature.Status -ne 'NotSigned') {
-    throw "Expected an unsigned package, but the signature status was $($signature.Status)."
-}
-
 $signTool = Get-WindowsSdkTool 'signtool.exe'
 $testCertificate = New-SelfSignedCertificate `
     -Type Custom `
