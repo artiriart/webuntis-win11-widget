@@ -27,11 +27,35 @@ if (-not $package) {
 }
 
 $unsignedPackage = Join-Path $artifactDir 'WebUntis.msix'
-Copy-Item $package.FullName $unsignedPackage -Force
+. (Join-Path $PSScriptRoot 'repack-signable.ps1')
+Convert-ToSignableMsix -InputPackage $package.FullName -OutputPackage $unsignedPackage
 
 $signature = Get-AuthenticodeSignature $unsignedPackage
 if ($signature.Status -ne 'NotSigned') {
     throw "Expected an unsigned package, but the signature status was $($signature.Status)."
+}
+
+$signTool = Get-WindowsSdkTool 'signtool.exe'
+$testCertificate = New-SelfSignedCertificate `
+    -Type Custom `
+    -Subject 'CN=artiriart' `
+    -KeyUsage DigitalSignature `
+    -FriendlyName 'WebUntis signability check' `
+    -CertStoreLocation 'Cert:\CurrentUser\My' `
+    -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}') `
+    -HashAlgorithm SHA256 `
+    -NotAfter (Get-Date).AddDays(1)
+$signabilityTest = Join-Path ([System.IO.Path]::GetTempPath()) 'webuntis-signability-test.msix'
+try {
+    Copy-Item $unsignedPackage $signabilityTest -Force
+    & $signTool sign /fd SHA256 /sha1 $testCertificate.Thumbprint $signabilityTest
+    if ($LASTEXITCODE -ne 0) {
+        throw "signtool could not sign the repacked package. Exit code $LASTEXITCODE."
+    }
+}
+finally {
+    Remove-Item $signabilityTest -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "Cert:\CurrentUser\My\$($testCertificate.Thumbprint)" -ErrorAction SilentlyContinue
 }
 
 $privateMaterial = Get-ChildItem -Path $artifactDir -Include '*.pfx', '*.pvk', '*.cer' -Recurse -File -ErrorAction SilentlyContinue

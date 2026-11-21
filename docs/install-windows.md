@@ -18,6 +18,25 @@ Add-AppxPackage -Path .\WebUntis.msix -AllowUnsigned
 
 Open WebUntis from the Start menu. The window should say that you are not signed in. The widget can appear in the Widgets Board only after the package is installed.
 
+## If signtool says the file format is not recognized
+
+The CI packager writes a Zip64 MSIX. `signtool` cannot sign that format, even with a valid PFX. Repack it with `makeappx` first. From the unzipped artifact folder:
+
+```powershell
+$kit = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.28000.0\x64"
+$layout = Join-Path $env:TEMP "webuntis-layout"
+if (Test-Path $layout) { Remove-Item $layout -Recurse -Force }
+New-Item -ItemType Directory -Path $layout | Out-Null
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::ExtractToDirectory("$pwd\WebUntis.msix", $layout)
+Remove-Item -LiteralPath "$layout\[Content_Types].xml" -Force
+Remove-Item -LiteralPath "$layout\AppxBlockMap.xml" -Force
+& "$kit\makeappx.exe" pack /d $layout /p "$pwd\WebUntis.signable.msix" /o
+& "$kit\signtool.exe" sign /fd SHA256 /f .\WebUntis.pfx /p (Read-Host 'PFX password') .\WebUntis.signable.msix
+```
+
+The PFX subject must be exactly `CN=artiriart`. Do not commit the PFX. CI repacks new artifacts before upload, so a package from a run after this fix can be signed directly.
+
 ## Sign it on this computer
 
 This checks the signed-install path. The private key is created in your user certificate store and is not written to a file.

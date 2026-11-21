@@ -3,14 +3,18 @@
 
 param(
     [Parameter(Mandatory = $true)]
-    [string]$Package
+    [string]$Package,
+    [string]$Pfx
 )
 
 $ErrorActionPreference = 'Stop'
 $subject = 'CN=artiriart'
 $packagePath = (Resolve-Path $Package).Path
 $outDir = Split-Path -Parent $packagePath
+$signablePackage = Join-Path $outDir 'WebUntis.signable.msix'
 $signedPackage = Join-Path $outDir 'WebUntis.signed.msix'
+. (Join-Path $PSScriptRoot 'repack-signable.ps1')
+Convert-ToSignableMsix -InputPackage $packagePath -OutputPackage $signablePackage
 
 $certificate = Get-ChildItem Cert:\CurrentUser\My |
     Where-Object { $_.Subject -eq $subject -and $_.FriendlyName -eq 'WebUntis development' -and $_.HasPrivateKey } |
@@ -35,21 +39,33 @@ if ($certificate.Subject -ne $subject) {
 }
 
 $publicCertificate = Join-Path $outDir 'WebUntis.cer'
-Export-Certificate -Cert $certificate -FilePath $publicCertificate | Out-Null
-Copy-Item $packagePath $signedPackage -Force
+$signTool = Get-WindowsSdkTool 'signtool.exe'
+Copy-Item $signablePackage $signedPackage -Force
 
-$signTool = Get-ChildItem -Path 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter 'signtool.exe' -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -match '\\x64\\signtool.exe$' } |
-    Sort-Object FullName -Descending |
-    Select-Object -First 1
-if (-not $signTool) {
-    throw 'signtool.exe was not found. Install the Windows SDK Signing Tools for Desktop Apps.'
+if ($Pfx) {
+    $pfxPath = (Resolve-Path $Pfx).Path
+    $securePassword = Read-Host -AsSecureString 'PFX password'
+    $passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
+    try {
+        $pfxPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($passwordPointer)
+        $loaded = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($pfxPath, $pfxPassword)
+        if ($loaded.Subject -ne $subject) {
+            throw "PFX subject is '$($loaded.Subject)'. It must be exactly $subject, matching the package publisher."
+        }
+        Export-Certificate -Cert $loaded -FilePath $publicCertificate | Out-Null
+        & $signTool sign /fd SHA256 /f $pfxPath /p $pfxPassword $signedPackage
+        if ($LASTEXITCODE -ne 0) {
+            throw "signtool failed with exit code $LASTEXITCODE."
+        }
+    }
+    finally {
+        $pfxPassword = $null
+        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($passwordPointer)
+    }
 }
-
-& $signTool.FullName sign /fd SHA256 /sha1 $certificate.Thumbprint /tr http://timestamp.digicert.com /td SHA256 $signedPackage
-if ($LASTEXITCODE -ne 0) {
-    Write-Host 'Timestamp server was unavailable. Signing without a timestamp.'
-    & $signTool.FullName sign /fd SHA256 /sha1 $certificate.Thumbprint $signedPackage
+else {
+    Export-Certificate -Cert $certificate -FilePath $publicCertificate | Out-Null
+    & $signTool sign /fd SHA256 /sha1 $certificate.Thumbprint $signedPackage
     if ($LASTEXITCODE -ne 0) {
         throw "signtool failed with exit code $LASTEXITCODE."
     }
