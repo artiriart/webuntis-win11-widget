@@ -11,6 +11,6 @@ Build settings:
 - .NET 10, because .NET 8 left support on 10 November 2026.
 - Windows App SDK 2.6.5.
 - Minimum OS 10.0.22000.0, because the Widgets Board is Windows 11.
-- Signed development MSIX. `.github/workflows/build.yml` creates the certificate during the job. The subject is `CN=artiriart`, matching the package publisher. Only `WebUntis.cer` is exported. `*.pfx` is ignored and is not produced.
+- Unsigned MSIX from `.github/workflows/build.yml`. A local test certificate is created by `ci/sign-local.ps1` and is not committed. Production trust would later use Azure Trusted Signing or another public certificate authority.
 
-Installation is documented in [install-windows.md](install-windows.md).
+Installation and local signing are documented in [install-windows.md](install-windows.md).

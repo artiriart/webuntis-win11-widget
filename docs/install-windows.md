@@ -1,37 +1,49 @@
-# Install a development build
+# Test the package on your PC
 
-The GitHub Actions artifact contains three files:
+CI publishes an unsigned MSIX. Azure Trusted Signing is only needed later, when other people should install the app without trusting a certificate you made. It is not required to test on your own Windows 11 PC.
 
-- `WebUntis.msix`, signed by that run's development certificate
+Download the `webuntis-msix` artifact from a successful run of `.github/workflows/build.yml` and unzip it. You should see `WebUntis.msix` and this file. There is no certificate in that zip.
+
+The package publisher is `CN=artiriart`. A local signing certificate must use that exact subject.
+
+## Fastest test: install the unsigned package
+
+Developer Mode is already enabled, so Windows can sideload this package without a signature.
+
+Open PowerShell in the unzipped folder:
+
+```powershell
+Add-AppxPackage -Path .\WebUntis.msix -AllowUnsigned
+```
+
+Open WebUntis from the Start menu. The window should say that you are not signed in. The widget can appear in the Widgets Board only after the package is installed.
+
+## Sign it on this computer
+
+This checks the signed-install path. The private key is created in your user certificate store and is not written to a file.
+
+From the repository, in PowerShell:
+
+```powershell
+.\ci\sign-local.ps1 -Package C:\path\to\WebUntis.msix
+```
+
+The script needs `signtool.exe` from the Windows SDK Signing Tools. It writes two files next to the unsigned package:
+
+- `WebUntis.signed.msix`
 - `WebUntis.cer`, the public certificate only
-- `INSTALL.md`, this page
 
-The private key is created in the Actions runner's certificate store and is not in the artifact or the repository. A certificate from one run will not install a package from another run. Use the `.cer` from the same zip as the `.msix`.
-
-Developer Mode lets Windows sideload a package. It does not trust this certificate. You still have to install `WebUntis.cer`.
-
-## Trust the certificate
-
-Open PowerShell as administrator in the unzipped artifact folder and run:
+Then open PowerShell as administrator:
 
 ```powershell
 Import-Certificate -FilePath .\WebUntis.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople
 Import-Certificate -FilePath .\WebUntis.cer -CertStoreLocation Cert:\LocalMachine\Root
+Add-AppxPackage -Path .\WebUntis.signed.msix
 ```
 
-Trusted People is the store Windows uses for a sideload signer. Trusted Root is also required because this certificate is self-signed and has no public certificate authority. It is only a development signer for this package. Do not use it for anything else.
+Trusted People is the sideload signer store. Trusted Root is also required because the certificate is self-signed. Do not use that certificate for anything else.
 
-You can do the same thing in the certificate UI: double-click `WebUntis.cer`, choose Install Certificate, choose Local Machine, and place it in both stores.
-
-## Install the package
-
-In the same folder, from a normal PowerShell window:
-
-```powershell
-Add-AppxPackage -Path .\WebUntis.msix
-```
-
-Then open WebUntis from the Start menu. The window should say that you are not signed in. The WebUntis widget can appear in the Widgets Board only after this package is installed.
+If signing fails because the publisher does not match, do not change the certificate subject. The package was built for `CN=artiriart`.
 
 ## Remove it
 
@@ -39,6 +51,7 @@ Then open WebUntis from the Start menu. The window should say that you are not s
 Get-AppxPackage artiriart.WebUntis | Remove-AppxPackage
 Get-ChildItem Cert:\LocalMachine\TrustedPeople | Where-Object { $_.Subject -eq 'CN=artiriart' -and $_.FriendlyName -eq 'WebUntis development' } | Remove-Item
 Get-ChildItem Cert:\LocalMachine\Root | Where-Object { $_.Subject -eq 'CN=artiriart' -and $_.FriendlyName -eq 'WebUntis development' } | Remove-Item
+Get-ChildItem Cert:\CurrentUser\My | Where-Object { $_.Subject -eq 'CN=artiriart' -and $_.FriendlyName -eq 'WebUntis development' } | Remove-Item
 ```
 
-The removal commands need an administrator PowerShell. They remove only a certificate whose subject and friendly name both match this development certificate.
+The LocalMachine commands need an administrator PowerShell.
