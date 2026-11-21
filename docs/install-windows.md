@@ -20,22 +20,15 @@ Open WebUntis from the Start menu. The window should say that you are not signed
 
 ## If signtool says the file format is not recognized
 
-The CI packager writes a Zip64 MSIX. `signtool` cannot sign that format, even with a valid PFX. Repack it with `makeappx` first. From the unzipped artifact folder:
+The package is Zip64. `signtool` cannot sign that format, and current `makeappx.exe` writes Zip64 too. From a checkout of this branch, rewrite it before signing:
 
 ```powershell
-$kit = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.28000.0\x64"
-$layout = Join-Path $env:TEMP "webuntis-layout"
-if (Test-Path $layout) { Remove-Item $layout -Recurse -Force }
-New-Item -ItemType Directory -Path $layout | Out-Null
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::ExtractToDirectory("$pwd\WebUntis.msix", $layout)
-Remove-Item -LiteralPath "$layout\[Content_Types].xml" -Force
-Remove-Item -LiteralPath "$layout\AppxBlockMap.xml" -Force
-& "$kit\makeappx.exe" pack /d $layout /p "$pwd\WebUntis.signable.msix" /o
-& "$kit\signtool.exe" sign /fd SHA256 /f .\WebUntis.pfx /p (Read-Host 'PFX password') .\WebUntis.signable.msix
+. .\ci\repack-signable.ps1
+Convert-ToSignableMsix -InputPackage .\WebUntis.msix -OutputPackage .\WebUntis.signable.msix
+& "C:\Program Files (x86)\Windows Kits\10\bin\10.0.28000.0\x64\signtool.exe" sign /fd SHA256 /f .\WebUntis.pfx /p (Read-Host 'PFX password') .\WebUntis.signable.msix
 ```
 
-The PFX subject must be exactly `CN=artiriart`. Do not commit the PFX. CI repacks new artifacts before upload, so a package from a run after this fix can be signed directly.
+The PFX subject must be exactly `CN=artiriart`. Do not commit the PFX. New CI artifacts are rewritten before upload.
 
 ## Sign it on this computer
 
