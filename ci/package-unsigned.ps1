@@ -30,7 +30,6 @@ $unsignedPackage = Join-Path $artifactDir 'WebUntis.msix'
 . (Join-Path $PSScriptRoot 'repack-signable.ps1')
 Convert-ToSignableMsix -InputPackage $package.FullName -OutputPackage $unsignedPackage
 
-$signTool = Get-WindowsSdkTool 'signtool.exe'
 $testCertificate = New-SelfSignedCertificate `
     -Type Custom `
     -Subject 'CN=artiriart' `
@@ -40,17 +39,59 @@ $testCertificate = New-SelfSignedCertificate `
     -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}') `
     -HashAlgorithm SHA256 `
     -NotAfter (Get-Date).AddDays(1)
-$signabilityTest = Join-Path ([System.IO.Path]::GetTempPath()) 'webuntis-signability-test.msix'
-try {
-    Copy-Item $unsignedPackage $signabilityTest -Force
-    & $signTool sign /fd SHA256 /sha1 $testCertificate.Thumbprint $signabilityTest
-    if ($LASTEXITCODE -ne 0) {
-        throw "signtool could not sign the repacked package. Exit code $LASTEXITCODE."
+$signTools = @(Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe' | Sort-Object FullName)
+$makeAppxTools = @(Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\*\x64\makeappx.exe' | Sort-Object FullName)
+Write-Host "signtool: $($signTools.FullName -join ' | ')"
+Write-Host "makeappx: $($makeAppxTools.FullName -join ' | ')"
+if ($makeAppxTools.Count -gt 0) {
+    & $makeAppxTools[-1].FullName
+}
+
+$layout = Join-Path ([System.IO.Path]::GetTempPath()) 'webuntis-makeappx-layout'
+if (Test-Path $layout) { Remove-Item $layout -Recurse -Force }
+New-Item -ItemType Directory -Path $layout | Out-Null
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::ExtractToDirectory($unsignedPackage, $layout)
+foreach ($generated in @('AppxBlockMap.xml', '[Content_Types].xml', 'AppxSignature.p7x')) {
+    $generatedPath = Join-Path $layout $generated
+    if (Test-Path -LiteralPath $generatedPath) { Remove-Item -LiteralPath $generatedPath -Force }
+}
+$candidates = @($unsignedPackage)
+foreach ($makeAppx in $makeAppxTools) {
+    $packed = Join-Path $artifactDir ("packed-" + $makeAppx.Directory.Parent.Name + '.msix')
+    & $makeAppx.FullName pack /d $layout /p $packed /o /h SHA256
+    Write-Host "makeappx $($makeAppx.FullName) pack exit $LASTEXITCODE"
+    if ($LASTEXITCODE -eq 0 -and (Test-Path $packed)) {
+        $header = [System.IO.File]::ReadAllBytes($packed)[0..5]
+        Write-Host "packed version $([BitConverter]::ToUInt16($header, 4))"
+        $candidates += $packed
     }
 }
-finally {
-    Remove-Item $signabilityTest -Force -ErrorAction SilentlyContinue
-    Remove-Item -Path "Cert:\CurrentUser\My\$($testCertificate.Thumbprint)" -ErrorAction SilentlyContinue
+
+$signed = $false
+foreach ($candidate in $candidates) {
+    foreach ($signTool in $signTools) {
+        foreach ($extension in @('.msix', '.appx')) {
+            $testPackage = Join-Path ([System.IO.Path]::GetTempPath()) ("webuntis-sign-test" + $extension)
+            Copy-Item $candidate $testPackage -Force
+            & $signTool.FullName sign /fd SHA256 /sha1 $testCertificate.Thumbprint $testPackage
+            $exitCode = $LASTEXITCODE
+            Write-Host "sign $($signTool.Directory.Parent.Name) $extension $(Split-Path $candidate -Leaf) exit $exitCode"
+            Remove-Item $testPackage -Force -ErrorAction SilentlyContinue
+            if ($exitCode -eq 0) {
+                Copy-Item $candidate $unsignedPackage -Force
+                $signed = $true
+                break
+            }
+        }
+        if ($signed) { break }
+    }
+    if ($signed) { break }
+}
+Get-ChildItem $artifactDir -Filter 'packed-*.msix' -ErrorAction SilentlyContinue | Remove-Item -Force
+Remove-Item -Path "Cert:\CurrentUser\My\$($testCertificate.Thumbprint)" -ErrorAction SilentlyContinue
+if (-not $signed) {
+    throw 'No installed signtool could sign the package.'
 }
 
 $privateMaterial = Get-ChildItem -Path $artifactDir -Include '*.pfx', '*.pvk', '*.cer' -Recurse -File -ErrorAction SilentlyContinue
